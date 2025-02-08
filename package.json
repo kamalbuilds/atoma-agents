@@ -16,9 +16,5 @@
   "packageManager": "pnpm@8.9.0",
   "engines": {
     "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@cetusprotocol/cetus-sui-clmm-sdk": "^5.2.0",
-    "@cetusprotocol/vaults-sdk": "^0.1.4"
   }
 }
