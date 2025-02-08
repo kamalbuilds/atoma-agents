@@ -1,45 +1,124 @@
-import { d, TickMath } from '@cetusprotocol/cetus-sui-clmm-sdk';
-import { CetusVaultsSDK } from '@cetusprotocol/vaults-sdk';
-import BN from 'bn.js'
+import { initCetusSDK } from '@cetusprotocol/cetus-sui-clmm-sdk'
 import { handleError } from '../../utils'
+import { CetusPool } from './types'
 
-export class PoolTool {
-  static async addLiquidity(
-    sdk: CetusVaultsSDK,
-    poolId: string, 
-    amount: string,
-    tickLower: number,
-    tickUpper: number,
-    slippage: number
-  ) {
+class PoolTool {
+  private static sdk: any
+
+  private static initSDK() {
+    if (!this.sdk) {
+      this.sdk = initCetusSDK({
+        network: 'mainnet',
+        fullNodeUrl: process.env.SUI_RPC_URL || 'https://fullnode.mainnet.sui.io',
+        simulationAccount: process.env.SUI_WALLET_ADDRESS || '',
+      })
+    }
+    return this.sdk
+  }
+
+  /**
+   * Gets information about a specific pool
+   * @param poolId The ID of the pool to get information for
+   * @returns Pool information
+   */
+  public static async getPool(poolId: string): Promise<string> {
     try {
+      const sdk = this.initSDK()
       const pool = await sdk.Pool.getPool(poolId)
-      const curSqrtPrice = new BN(pool.current_sqrt_price)
-      
-      const liquidityInput = await sdk.Position.calculateAddLiquidity({
-        pool,
-        tickLower,
-        tickUpper,
-        amount: new BN(amount),
-        fixedAmount: true,
-        slippage: d(slippage)
-      })
-
-      const payload = await sdk.Position.createAddLiquidityPayload({
-        pool_id: poolId,
-        amount_a: liquidityInput.tokenMaxA.toString(),
-        amount_b: liquidityInput.tokenMaxB.toString(),
-        tick_lower: tickLower.toString(),
-        tick_upper: tickUpper.toString(),
-        slippage
-      })
-
-      return payload
-
+      return JSON.stringify([{
+        reasoning: 'Successfully retrieved pool information',
+        response: pool,
+        status: 'success',
+        query: `Get pool ${poolId}`,
+        errors: []
+      }])
     } catch (error) {
-      throw error
+      return JSON.stringify([
+        handleError(error, {
+          reasoning: 'Failed to retrieve pool information',
+          query: `Attempted to get pool ${poolId}`
+        })
+      ])
     }
   }
 
-  // Additional pool methods...
-} 
+  /**
+   * Gets all pools
+   * @returns List of all pools
+   */
+  public static async getAllPools(): Promise<string> {
+    try {
+      const sdk = this.initSDK()
+      const pools = await sdk.Pool.getPools()
+      return JSON.stringify([{
+        reasoning: 'Successfully retrieved all pools',
+        response: pools,
+        status: 'success',
+        query: 'Get all pools',
+        errors: []
+      }])
+    } catch (error) {
+      return JSON.stringify([
+        handleError(error, {
+          reasoning: 'Failed to retrieve pools',
+          query: 'Attempted to get all pools'
+        })
+      ])
+    }
+  }
+
+  /**
+   * Gets pool statistics like TVL, volume, etc.
+   * @param poolId The ID of the pool to get statistics for
+   * @returns Pool statistics
+   */
+  public static async getPoolStats(poolId: string): Promise<string> {
+    try {
+      const sdk = this.initSDK()
+      const stats = await sdk.Pool.getPoolImmutables(poolId)
+      return JSON.stringify([{
+        reasoning: 'Successfully retrieved pool statistics',
+        response: stats,
+        status: 'success',
+        query: `Get stats for pool ${poolId}`,
+        errors: []
+      }])
+    } catch (error) {
+      return JSON.stringify([
+        handleError(error, {
+          reasoning: 'Failed to retrieve pool statistics',
+          query: `Attempted to get stats for pool ${poolId}`
+        })
+      ])
+    }
+  }
+
+  /**
+   * Gets all positions in a pool
+   * @param poolId The ID of the pool to get positions for
+   * @returns List of positions in the pool
+   */
+  public static async getPoolPositions(poolId: string): Promise<string> {
+    try {
+      const sdk = this.initSDK()
+      const pool = await sdk.Pool.getPool(poolId) as CetusPool
+      const positions = await sdk.Pool.getPositionList(pool.position_manager.positions_handle)
+      return JSON.stringify([{
+        reasoning: 'Successfully retrieved pool positions',
+        response: positions,
+        status: 'success',
+        query: `Get positions for pool ${poolId}`,
+        errors: []
+      }])
+    } catch (error) {
+      return JSON.stringify([
+        handleError(error, {
+          reasoning: 'Failed to retrieve pool positions',
+          query: `Attempted to get positions for pool ${poolId}`
+        })
+      ])
+    }
+  }
+}
+
+export default PoolTool 
