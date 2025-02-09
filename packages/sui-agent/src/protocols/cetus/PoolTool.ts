@@ -1,9 +1,9 @@
-import { initCetusSDK } from '@cetusprotocol/cetus-sui-clmm-sdk'
+import CetusClmmSDK, { initCetusSDK } from '@cetusprotocol/cetus-sui-clmm-sdk'
 import { handleError } from '../../utils'
 import { CetusPool } from './types'
 
 class PoolTool {
-  private static sdk: any
+  private static sdk: CetusClmmSDK
 
   private static initSDK() {
     if (!this.sdk) {

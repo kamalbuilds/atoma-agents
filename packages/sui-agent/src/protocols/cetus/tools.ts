@@ -1,10 +1,10 @@
-import { adjustForSlippage, initCetusSDK, d, TickMath, ClmmPoolUtil, Percentage } from '@cetusprotocol/cetus-sui-clmm-sdk'
+import CetusClmmSDK, { adjustForSlippage, initCetusSDK, d, TickMath, ClmmPoolUtil, Percentage } from '@cetusprotocol/cetus-sui-clmm-sdk'
 import BN from 'bn.js'
 import Tools from '../../utils/tools'
 import { handleError } from '../../utils'
 
 class CetusTools {
-  private static sdk: any
+  private static sdk: CetusClmmSDK
 
   private static initSDK() {
     if (!this.sdk) {

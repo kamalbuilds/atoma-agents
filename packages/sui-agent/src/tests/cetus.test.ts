@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import Agents from '../agents/SuiAgent';
-import { cetusSDK, TEST_POOLS, TEST_ADDRESSES, SLIPPAGE } from './setup';
+import {  TEST_POOLS, TEST_ADDRESSES, SLIPPAGE } from './setup';
 
 // Initialize agent with test credentials
 const agent = new Agents(process.env.BEARER_TOKEN || '');
