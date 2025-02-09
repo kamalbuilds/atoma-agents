@@ -75,7 +75,7 @@ class PoolTool {
   public static async getPoolStats(poolId: string): Promise<string> {
     try {
       const sdk = this.initSDK()
-      const stats = await sdk.Pool.getPoolImmutables(poolId)
+      const stats = await sdk.Pool.getPoolImmutables([poolId])
       return JSON.stringify([{
         reasoning: 'Successfully retrieved pool statistics',
         response: stats,
@@ -101,7 +101,7 @@ class PoolTool {
   public static async getPoolPositions(poolId: string): Promise<string> {
     try {
       const sdk = this.initSDK()
-      const pool = await sdk.Pool.getPool(poolId) as CetusPool
+      const pool = await sdk.Pool.getPool(poolId) as unknown as CetusPool
       const positions = await sdk.Pool.getPositionList(pool.position_manager.positions_handle)
       return JSON.stringify([{
         reasoning: 'Successfully retrieved pool positions',

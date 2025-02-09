@@ -283,18 +283,18 @@ class CetusTools {
       // Pre-swap calculation
       const preSwap = await sdk.Swap.preswap({
         pool,
-        current_sqrt_price: pool.current_sqrt_price,
+        currentSqrtPrice: pool.current_sqrt_price,
         coinTypeA: pool.coinTypeA,
         coinTypeB: pool.coinTypeB,
         decimalsA: 9, // Should get from coin metadata
         decimalsB: 9,
         a2b: true,
-        by_amount_in: true,
-        amount: new BN(amountIn)
+        byAmountIn: true,
+        amount: amountIn
       })
 
-      const toAmount = preSwap.byAmountIn ? preSwap.estimatedAmountOut : preSwap.estimatedAmountIn
-      const amountLimit = adjustForSlippage(toAmount, new Percentage(new BN(slippage * 100), new BN(100)), !preSwap.byAmountIn)
+      const toAmount = preSwap?.byAmountIn ? preSwap.estimatedAmountOut : preSwap?.estimatedAmountIn
+      const amountLimit = adjustForSlippage(toAmount, new Percentage(new BN(slippage * 100), new BN(100)), !preSwap?.byAmountIn)
 
       const payload = await sdk.Swap.createSwapTransactionPayload({
         pool_id: poolId,
@@ -342,10 +342,11 @@ class CetusTools {
         amount_a: '0',
         amount_b: '0',
         fix_amount_a: true,
-        tick_lower: '0',
-        tick_upper: '0',
+        tick_lower: 0,
+        tick_upper: 0,
         metadata_a: '',
-        metadata_b: ''
+        metadata_b: '',
+        slippage: 0
       })
 
       return JSON.stringify([{
@@ -368,7 +369,7 @@ class CetusTools {
   private static async removeLiquidity(positionId: string, liquidityAmount: string, slippage: number) {
     try {
       const sdk = this.initSDK()
-      const position = await sdk.Position.getPositionInfo(positionId)
+      const position = await sdk.Position.getPositionById(positionId)
       const pool = await sdk.Pool.getPool(position.pool)
 
       const lowerSqrtPrice = TickMath.tickIndexToSqrtPriceX64(position.tick_lower_index)
@@ -397,7 +398,8 @@ class CetusTools {
         min_amount_b: minAmountB.toString(),
         pool_id: pool.poolAddress,
         pos_id: positionId,
-        collect_fee: true
+        collect_fee: true,
+        rewarder_coin_types: []
       })
 
       return JSON.stringify([{
