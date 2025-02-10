@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
-import { config } from '../../config';
+import config from '../../config/config';
 import Agent from '@atoma-agents/sui-agent/src/agents/SuiAgent';
 import ChatHistory from '../../models/ChatHistory';
-
-const suiAgent = new Agent(config.atomaSdkBearerAuth);
+const {atomaSdkBearerAuth}=config.auth
+const suiAgent = new Agent(atomaSdkBearerAuth);
 const queryRouter: Router = Router();
 
 // Health check endpoint
