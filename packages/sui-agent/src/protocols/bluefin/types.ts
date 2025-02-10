@@ -1,4 +1,4 @@
-import { MarketSymbol, ORDER_SIDE, ORDER_TYPE, TIME_IN_FORCE } from "@bluefin-exchange/bluefin-v2-client";
+import { MarketSymbol, ORDER_SIDE, ORDER_TYPE, TIME_IN_FORCE, ORDER_STATUS } from "@bluefin-exchange/bluefin-v2-client";
 
 export interface BluefinConfig {
   network: "mainnet" | "testnet" | "devnet";
@@ -35,8 +35,10 @@ export interface BluefinCancelOrderParams {
 export interface BluefinUserDataParams {
   symbol?: MarketSymbol;
   parentAddress?: string;
+  statuses?: ORDER_STATUS[];
 }
 
 export interface BluefinMarketDataParams {
   symbol?: MarketSymbol;
+  limit?: number;
 } 

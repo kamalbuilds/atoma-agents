@@ -360,11 +360,13 @@ class BluefinTools {
       });
     }
 
+    const checkprice = price || 0;
+
     return this.client.postOrder({
       symbol,
       side,
-      type,
-      price,
+      orderType: type,
+      price: checkprice,
       quantity,
       timeInForce,
     });
@@ -378,7 +380,7 @@ class BluefinTools {
     } else if (orderId) {
       return this.client.postCancelOrder({
         symbol,
-        hash: orderId,
+        hashes: [orderId],
       });
     } else {
       throw new Error("Either orderId or cancelAll must be specified");
