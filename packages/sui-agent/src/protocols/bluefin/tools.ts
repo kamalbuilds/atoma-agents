@@ -1,4 +1,18 @@
-import { BluefinClient, ExtendedNetwork, ADJUST_MARGIN, ORDER_STATUS } from "@bluefin-exchange/bluefin-v2-client";
+import { 
+  BluefinClient, 
+  ExtendedNetwork, 
+  ADJUST_MARGIN, 
+  ORDER_STATUS,
+  ORDER_SIDE,
+  ORDER_TYPE,
+  PlaceOrderResponse,
+  CancelOrderResponse,
+  AdjustLeverageResponse,
+  GetPositionResponse,
+  GetOrderResponse,
+  GetOrderBookResponse,
+  MarketData
+} from "@bluefin-exchange/bluefin-v2-client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import Tools from "../../utils/tools";
 import { handleError } from "../../utils";
@@ -10,6 +24,15 @@ import {
   BluefinUserDataParams,
   BluefinMarketDataParams,
 } from "./types";
+
+interface FormattedResponse {
+  reasoning: string;
+  response: string;
+  status: "success";
+  query: string;
+  errors: string[];
+}
+
 
 class BluefinTools {
   private static client: BluefinClient;
@@ -35,14 +58,14 @@ class BluefinTools {
     return this.client;
   }
 
-  private static formatResponse(result: any, query: string): string {
+  private static formatResponse(result: unknown, query: string): string {
     return JSON.stringify([{
       reasoning: "Operation completed successfully",
       response: JSON.stringify(result),
       status: "success",
       query,
       errors: [],
-    }]);
+    } as FormattedResponse]);
   }
 
   private static formatError(error: unknown, context: { reasoning: string; query: string }): string {
@@ -97,8 +120,8 @@ class BluefinTools {
         try {
           const result = await this.placeOrder({
             symbol: args[0] as string,
-            side: args[1] as any,
-            type: args[2] as any,
+            side: args[1] as ORDER_SIDE,
+            type: args[2] as ORDER_TYPE,
             quantity: args[3] as number,
             price: args[4] as number || undefined,
             leverage: args[5] as number || undefined,
@@ -349,7 +372,7 @@ class BluefinTools {
     );
   }
 
-  private static async placeOrder(params: BluefinOrderParams): Promise<any> {
+  private static async placeOrder(params: BluefinOrderParams): Promise<PlaceOrderResponse> {
     const { symbol, side, type, price, quantity, timeInForce, leverage } = params;
     
     if (leverage) {
@@ -361,7 +384,7 @@ class BluefinTools {
 
     const checkprice = price || 0;
 
-    return this.client.postOrder({
+    const response = await this.client.postOrder({
       symbol,
       side,
       orderType: type,
@@ -369,77 +392,86 @@ class BluefinTools {
       quantity,
       timeInForce,
     });
+    return response.data;
   }
 
-  private static async cancelOrder(params: BluefinCancelOrderParams): Promise<any> {
+  private static async cancelOrder(params: BluefinCancelOrderParams): Promise<CancelOrderResponse> {
     const { symbol, orderId, cancelAll } = params;
     
     if (cancelAll) {
-      return this.client.cancelAllOpenOrders(symbol);
+      const response = await this.client.cancelAllOpenOrders(symbol);
+      return response.data;
     } else if (orderId) {
-      return this.client.postCancelOrder({
+      const response = await this.client.postCancelOrder({
         symbol,
         hashes: [orderId],
       });
+      return response.data;
     } else {
       throw new Error("Either orderId or cancelAll must be specified");
     }
   }
 
-  private static async adjustPosition(params: BluefinPositionParams): Promise<any> {
+  private static async adjustPosition(params: BluefinPositionParams): Promise<AdjustLeverageResponse> {
     const { symbol, leverage } = params;
     
     if (!leverage) {
       throw new Error("Leverage must be specified");
     }
 
-    return this.client.adjustLeverage({
+    const response = await this.client.adjustLeverage({
       symbol,
       leverage,
     });
+    return response.data;
   }
 
-  private static async adjustMargin(params: BluefinMarginParams): Promise<any> {
+  private static async adjustMargin(params: BluefinMarginParams): Promise<GetPositionResponse> {
     const { symbol, amount, isDeposit } = params;
     
-    return this.client.adjustMargin(
+    const response = await this.client.adjustMargin(
       symbol,
       isDeposit ? ADJUST_MARGIN.Add : ADJUST_MARGIN.Remove,
       amount
     );
+    return response.data;
   }
 
-  private static async getUserOrders(params: BluefinUserDataParams): Promise<any> {
+  private static async getUserOrders(params: BluefinUserDataParams): Promise<GetOrderResponse[]> {
     const { symbol, parentAddress } = params;
-    return this.client.getUserOrders({
+    const response = await this.client.getUserOrders({
       symbol,
       parentAddress,
       statuses: [ORDER_STATUS.OPEN, ORDER_STATUS.PARTIAL_FILLED],
     });
+    return response.data;
   }
 
-  private static async getUserPositions(params: BluefinUserDataParams): Promise<any> {
+  private static async getUserPositions(params: BluefinUserDataParams): Promise<GetPositionResponse[]> {
     const { symbol, parentAddress } = params;
-    return this.client.getUserPosition({
+    const response = await this.client.getUserPosition({
       symbol,
       parentAddress,
     });
+    return response.data;
   }
 
-  private static async getOrderbook(params: BluefinMarketDataParams): Promise<any> {
+  private static async getOrderbook(params: BluefinMarketDataParams): Promise<GetOrderBookResponse> {
     const { symbol } = params;
     if (!symbol) {
       throw new Error("Symbol must be specified for orderbook data");
     }
-    return this.client.getOrderbook({ 
+    const response = await this.client.getOrderbook({ 
       symbol,
       limit: 50,
     });
+    return response.data;
   }
 
-  private static async getMarketData(params: BluefinMarketDataParams): Promise<any> {
+  private static async getMarketData(params: BluefinMarketDataParams): Promise<MarketData> {
     const { symbol } = params;
-    return this.client.getMarketData(symbol);
+    const response = await this.client.getMarketData(symbol);
+    return response.data;
   }
 }
 
