@@ -1,4 +1,4 @@
-import { BluefinClient, ExtendedNetwork } from "@bluefin-exchange/bluefin-v2-client";
+import { BluefinClient, ExtendedNetwork, ADJUST_MARGIN, ORDER_STATUS } from "@bluefin-exchange/bluefin-v2-client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import Tools from "../../utils/tools";
 import { handleError } from "../../utils";
@@ -101,8 +101,8 @@ class BluefinTools {
             side: args[1] as any,
             type: args[2] as any,
             quantity: args[3] as number,
-            price: args[4] as number,
-            leverage: args[5] as number,
+            price: args[4] as number || undefined,
+            leverage: args[5] as number || undefined,
           });
           return this.formatResponse(result, `Place ${args[1]} order for ${args[3]} ${args[0]} at ${args[4] || 'MARKET'}`);
         } catch (error) {
@@ -337,6 +337,7 @@ class BluefinTools {
           const result = await this.getUserOrders({
             symbol: args[0] as string,
             parentAddress: args[1] as string,
+            statuses: [ORDER_STATUS.OPEN, ORDER_STATUS.PARTIAL_FILLED],
           });
           return this.formatResponse(result, `Get orders for ${args[1] || 'user'} ${args[0] ? `in ${args[0]}` : ''}`);
         } catch (error) {
@@ -377,7 +378,7 @@ class BluefinTools {
     } else if (orderId) {
       return this.client.postCancelOrder({
         symbol,
-        orderId,
+        hash: orderId,
       });
     } else {
       throw new Error("Either orderId or cancelAll must be specified");
@@ -402,7 +403,7 @@ class BluefinTools {
     
     return this.client.adjustMargin(
       symbol,
-      isDeposit ? "ADD" : "REMOVE",
+      isDeposit ? ADJUST_MARGIN.Add : ADJUST_MARGIN.Remove,
       amount
     );
   }
@@ -412,6 +413,7 @@ class BluefinTools {
     return this.client.getUserOrders({
       symbol,
       parentAddress,
+      statuses: [ORDER_STATUS.OPEN, ORDER_STATUS.PARTIAL_FILLED],
     });
   }
 
@@ -428,7 +430,10 @@ class BluefinTools {
     if (!symbol) {
       throw new Error("Symbol must be specified for orderbook data");
     }
-    return this.client.getOrderbook({ symbol });
+    return this.client.getOrderbook({ 
+      symbol,
+      limit: 50,
+    });
   }
 
   private static async getMarketData(params: BluefinMarketDataParams): Promise<any> {
