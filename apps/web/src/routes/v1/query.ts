@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import config from '../../config/config';
 import Agent from '@atoma-agents/sui-agent/src/agents/SuiAgent';
 import ChatHistory from '../../models/ChatHistory';
-const {atomaSdkBearerAuth}=config.auth
+const { atomaSdkBearerAuth } = config.auth;
 const suiAgent = new Agent(atomaSdkBearerAuth);
 const queryRouter: Router = Router();
 

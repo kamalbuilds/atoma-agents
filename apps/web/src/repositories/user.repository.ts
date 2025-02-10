@@ -1,15 +1,13 @@
-import { User, IUser } from "../models/user.model"
+import { User, IUser } from '../models/user.model';
 
 class UserRepository {
-    constructor() {};
+  async getAllUsers(): Promise<IUser[]> {
+    return await User.find();
+  }
 
-    async getAllUsers(): Promise<IUser[]> {
-        return await User.find()
-    }
-
-    async getById(id: string): Promise<IUser | null> {
-        return await User.findById(id);
-    }
+  async getById(id: string): Promise<IUser | null> {
+    return await User.findById(id);
+  }
 }
 
 export default UserRepository;

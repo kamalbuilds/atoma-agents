@@ -2,7 +2,7 @@ import app from './app';
 import { connectDB, disconnectDB } from './config/db';
 
 import config from './config/config';
-const {port,env}=config;
+const { port, env } = config;
 
 async function startServer() {
   try {

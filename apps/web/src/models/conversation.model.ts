@@ -1,19 +1,19 @@
-import { Schema, model, Document, Types,PopulatedDoc } from "mongoose";
-import { IMessage } from "./message.model";
+import { Schema, model, Document, Types, PopulatedDoc } from 'mongoose';
+import { IMessage } from './message.model';
 
 interface IConversation extends Document {
   walletAddress: string;
-  messages: PopulatedDoc<Document<Types.ObjectId> & IMessage>[]
+  messages: PopulatedDoc<Document<Types.ObjectId> & IMessage>[];
   startedAt: Date;
   endedAt?: Date;
 }
 
 const ConversationSchema = new Schema<IConversation>({
   walletAddress: { type: String, required: true },
-  messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
+  messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }],
   startedAt: { type: Date, default: Date.now },
-  endedAt: { type: Date },
+  endedAt: { type: Date }
 });
 
-export const Conversation = model<IConversation>("Conversation", ConversationSchema);
+export const Conversation = model<IConversation>('Conversation', ConversationSchema);
 export { IConversation };
