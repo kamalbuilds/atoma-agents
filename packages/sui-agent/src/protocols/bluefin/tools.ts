@@ -3,7 +3,6 @@ import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import Tools from "../../utils/tools";
 import { handleError } from "../../utils";
 import {
-  BluefinConfig,
   BluefinOrderParams,
   BluefinPositionParams,
   BluefinMarginParams,
