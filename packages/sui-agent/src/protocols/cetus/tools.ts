@@ -1,20 +1,28 @@
-import CetusClmmSDK, { adjustForSlippage, initCetusSDK, d, TickMath, ClmmPoolUtil, Percentage } from '@cetusprotocol/cetus-sui-clmm-sdk'
-import BN from 'bn.js'
-import Tools from '../../utils/tools'
-import { handleError } from '../../utils'
+import CetusClmmSDK, {
+  adjustForSlippage,
+  initCetusSDK,
+  d,
+  TickMath,
+  ClmmPoolUtil,
+  Percentage,
+} from '@cetusprotocol/cetus-sui-clmm-sdk';
+import BN from 'bn.js';
+import Tools from '../../utils/tools';
+import { handleError } from '../../utils';
 
 class CetusTools {
-  private static sdk: CetusClmmSDK
+  private static sdk: CetusClmmSDK;
 
   private static initSDK() {
     if (!this.sdk) {
       this.sdk = initCetusSDK({
         network: 'mainnet',
-        fullNodeUrl: process.env.SUI_RPC_URL || 'https://fullnode.mainnet.sui.io',
+        fullNodeUrl:
+          process.env.SUI_RPC_URL || 'https://fullnode.mainnet.sui.io',
         simulationAccount: process.env.SUI_WALLET_ADDRESS || '',
-      })
+      });
     }
-    return this.sdk
+    return this.sdk;
   }
 
   public static registerTools(tools: Tools) {
@@ -27,11 +35,11 @@ class CetusTools {
           name: 'pool_id',
           type: 'string',
           description: 'The object ID of the pool',
-          required: true
-        }
+          required: true,
+        },
       ],
-      async (...args) => this.getPool(args[0] as string)
-    )
+      async (...args) => this.getPool(args[0] as string),
+    );
 
     // Position Tools
     tools.registerTool(
@@ -42,17 +50,18 @@ class CetusTools {
           name: 'address',
           type: 'string',
           description: 'The address to get positions for',
-          required: true
+          required: true,
         },
         {
           name: 'pool_id',
           type: 'string',
           description: 'Optional pool ID to filter positions',
-          required: false
-        }
+          required: false,
+        },
       ],
-      async (...args) => this.getPositions(args[0] as string, args[1] as string)
-    )
+      async (...args) =>
+        this.getPositions(args[0] as string, args[1] as string),
+    );
 
     // Add Liquidity Tool
     tools.registerTool(
@@ -63,23 +72,28 @@ class CetusTools {
           name: 'pool_id',
           type: 'string',
           description: 'Pool ID to add liquidity to',
-          required: true
+          required: true,
         },
         {
           name: 'amount',
           type: 'string',
           description: 'Amount to add as liquidity',
-          required: true
+          required: true,
         },
         {
           name: 'slippage',
           type: 'number',
           description: 'Slippage tolerance (e.g. 0.01 for 1%)',
-          required: true
-        }
+          required: true,
+        },
       ],
-      async (...args) => this.addLiquidity(args[0] as string, args[1] as string, args[2] as number)
-    )
+      async (...args) =>
+        this.addLiquidity(
+          args[0] as string,
+          args[1] as string,
+          args[2] as number,
+        ),
+    );
 
     // Swap Tool
     tools.registerTool(
@@ -90,23 +104,24 @@ class CetusTools {
           name: 'pool_id',
           type: 'string',
           description: 'Pool ID to swap on',
-          required: true
+          required: true,
         },
         {
           name: 'amount_in',
-          type: 'string', 
+          type: 'string',
           description: 'Amount to swap',
-          required: true
+          required: true,
         },
         {
           name: 'slippage',
           type: 'number',
           description: 'Slippage tolerance (e.g. 0.01 for 1%)',
-          required: true
-        }
+          required: true,
+        },
       ],
-      async (...args) => this.swap(args[0] as string, args[1] as string, args[2] as number)
-    )
+      async (...args) =>
+        this.swap(args[0] as string, args[1] as string, args[2] as number),
+    );
 
     // Create Pool Tool
     tools.registerTool(
@@ -117,34 +132,35 @@ class CetusTools {
           name: 'coin_type_a',
           type: 'string',
           description: 'Type of first coin in pool',
-          required: true
+          required: true,
         },
         {
           name: 'coin_type_b',
           type: 'string',
           description: 'Type of second coin in pool',
-          required: true
+          required: true,
         },
         {
           name: 'tick_spacing',
           type: 'number',
           description: 'Tick spacing for the pool (affects fee rate)',
-          required: true
+          required: true,
         },
         {
           name: 'initial_price',
           type: 'string',
           description: 'Initial price for the pool',
-          required: true
-        }
+          required: true,
+        },
       ],
-      async (...args) => this.createPool(
-        args[0] as string,
-        args[1] as string,
-        args[2] as number,
-        args[3] as string
-      )
-    )
+      async (...args) =>
+        this.createPool(
+          args[0] as string,
+          args[1] as string,
+          args[2] as number,
+          args[3] as string,
+        ),
+    );
 
     // Remove Liquidity Tool
     tools.registerTool(
@@ -155,92 +171,113 @@ class CetusTools {
           name: 'position_id',
           type: 'string',
           description: 'Position ID to remove liquidity from',
-          required: true
+          required: true,
         },
         {
           name: 'liquidity_amount',
           type: 'string',
           description: 'Amount of liquidity to remove',
-          required: true
+          required: true,
         },
         {
           name: 'slippage',
           type: 'number',
           description: 'Slippage tolerance (e.g. 0.01 for 1%)',
-          required: true
-        }
+          required: true,
+        },
       ],
-      async (...args) => this.removeLiquidity(
-        args[0] as string,
-        args[1] as string,
-        args[2] as number
-      )
-    )
+      async (...args) =>
+        this.removeLiquidity(
+          args[0] as string,
+          args[1] as string,
+          args[2] as number,
+        ),
+    );
   }
 
   private static async getPool(poolId: string) {
     try {
-      const sdk = this.initSDK()
-      const pool = await sdk.Pool.getPool(poolId)
-      return JSON.stringify([{
-        reasoning: 'Successfully retrieved pool information',
-        response: pool,
-        status: 'success',
-        query: `Get pool ${poolId}`,
-        errors: []
-      }])
+      const sdk = this.initSDK();
+      const pool = await sdk.Pool.getPool(poolId);
+      return JSON.stringify([
+        {
+          reasoning: 'Successfully retrieved pool information',
+          response: pool,
+          status: 'success',
+          query: `Get pool ${poolId}`,
+          errors: [],
+        },
+      ]);
     } catch (error) {
       return JSON.stringify([
         handleError(error, {
           reasoning: 'Failed to retrieve pool information',
-          query: `Attempted to get pool ${poolId}`
-        })
-      ])
+          query: `Attempted to get pool ${poolId}`,
+        }),
+      ]);
     }
   }
 
   private static async getPositions(address: string, poolId?: string) {
     try {
-      const sdk = this.initSDK()
-      const positions = await sdk.Position.getPositionList(address, poolId ? [poolId] : undefined)
-      return JSON.stringify([{
-        reasoning: 'Successfully retrieved positions',
-        response: positions,
-        status: 'success',
-        query: `Get positions for address ${address}`,
-        errors: []
-      }])
+      const sdk = this.initSDK();
+      const positions = await sdk.Position.getPositionList(
+        address,
+        poolId ? [poolId] : undefined,
+      );
+      return JSON.stringify([
+        {
+          reasoning: 'Successfully retrieved positions',
+          response: positions,
+          status: 'success',
+          query: `Get positions for address ${address}`,
+          errors: [],
+        },
+      ]);
     } catch (error) {
       return JSON.stringify([
         handleError(error, {
           reasoning: 'Failed to retrieve positions',
-          query: `Attempted to get positions for address ${address}`
-        })
-      ])
+          query: `Attempted to get positions for address ${address}`,
+        }),
+      ]);
     }
   }
 
-  private static async addLiquidity(poolId: string, amount: string, slippage: number) {
+  private static async addLiquidity(
+    poolId: string,
+    amount: string,
+    slippage: number,
+  ) {
     try {
-      const sdk = this.initSDK()
-      const pool = await sdk.Pool.getPool(poolId)
-      
+      const sdk = this.initSDK();
+      const pool = await sdk.Pool.getPool(poolId);
+
       // Calculate tick range around current price
-      const currentTick = TickMath.sqrtPriceX64ToTickIndex(new BN(pool.current_sqrt_price))
-      const tickSpacing = Number(pool.tickSpacing)
-      const tickLower = TickMath.getPrevInitializableTickIndex(currentTick, tickSpacing)
-      const tickUpper = TickMath.getNextInitializableTickIndex(currentTick, tickSpacing)
+      const currentTick = TickMath.sqrtPriceX64ToTickIndex(
+        new BN(pool.current_sqrt_price),
+      );
+      const tickSpacing = Number(pool.tickSpacing);
+      const tickLower = TickMath.getPrevInitializableTickIndex(
+        currentTick,
+        tickSpacing,
+      );
+      const tickUpper = TickMath.getNextInitializableTickIndex(
+        currentTick,
+        tickSpacing,
+      );
 
       // Calculate liquidity amounts
-      const liquidityInput = ClmmPoolUtil.estLiquidityAndcoinAmountFromOneAmounts(
-        tickLower,
-        tickUpper,
-        new BN(amount),
-        true, // fix amount A
-        true,
-        slippage,
-        new BN(pool.current_sqrt_price)
-      )
+      const liquidityInput =
+        ClmmPoolUtil.estLiquidityAndcoinAmountFromOneAmounts(
+          tickLower,
+          tickUpper,
+          new BN(amount),
+          true, // fix amount A
+          true,
+          slippage,
+          new BN(pool.current_sqrt_price),
+        );
 
       const payload = await sdk.Position.createAddLiquidityFixTokenPayload({
         coinTypeA: pool.coinTypeA,
@@ -255,30 +292,36 @@ class CetusTools {
         fix_amount_a: true,
         rewarder_coin_types: [],
         collect_fee: false,
-        pos_id: ''
-      })
+        pos_id: '',
+      });
 
-      return JSON.stringify([{
-        reasoning: 'Successfully created add liquidity transaction',
-        response: payload,
-        status: 'success',
-        query: `Add liquidity to pool ${poolId}`,
-        errors: []
-      }])
+      return JSON.stringify([
+        {
+          reasoning: 'Successfully created add liquidity transaction',
+          response: payload,
+          status: 'success',
+          query: `Add liquidity to pool ${poolId}`,
+          errors: [],
+        },
+      ]);
     } catch (error) {
       return JSON.stringify([
         handleError(error, {
           reasoning: 'Failed to create add liquidity transaction',
-          query: `Attempted to add liquidity to pool ${poolId}`
-        })
-      ])
+          query: `Attempted to add liquidity to pool ${poolId}`,
+        }),
+      ]);
     }
   }
 
-  private static async swap(poolId: string, amountIn: string, slippage: number) {
+  private static async swap(
+    poolId: string,
+    amountIn: string,
+    slippage: number,
+  ) {
     try {
-      const sdk = this.initSDK()
-      const pool = await sdk.Pool.getPool(poolId)
+      const sdk = this.initSDK();
+      const pool = await sdk.Pool.getPool(poolId);
 
       // Pre-swap calculation
       const preSwap = await sdk.Swap.preswap({
@@ -290,11 +333,17 @@ class CetusTools {
         decimalsB: 9,
         a2b: true,
         byAmountIn: true,
-        amount: amountIn
-      })
+        amount: amountIn,
+      });
 
-      const toAmount = preSwap?.byAmountIn ? preSwap.estimatedAmountOut : preSwap?.estimatedAmountIn
-      const amountLimit = adjustForSlippage(toAmount, new Percentage(new BN(slippage * 100), new BN(100)), !preSwap?.byAmountIn)
+      const toAmount = preSwap?.byAmountIn
+        ? preSwap.estimatedAmountOut
+        : preSwap?.estimatedAmountIn;
+      const amountLimit = adjustForSlippage(
+        toAmount,
+        new Percentage(new BN(slippage * 100), new BN(100)),
+        !preSwap?.byAmountIn,
+      );
 
       const payload = await sdk.Swap.createSwapTransactionPayload({
         pool_id: poolId,
@@ -303,23 +352,25 @@ class CetusTools {
         a2b: true,
         by_amount_in: true,
         amount: amountIn,
-        amount_limit: amountLimit.toString()
-      })
+        amount_limit: amountLimit.toString(),
+      });
 
-      return JSON.stringify([{
-        reasoning: 'Successfully created swap transaction',
-        response: payload,
-        status: 'success',
-        query: `Swap on pool ${poolId}`,
-        errors: []
-      }])
+      return JSON.stringify([
+        {
+          reasoning: 'Successfully created swap transaction',
+          response: payload,
+          status: 'success',
+          query: `Swap on pool ${poolId}`,
+          errors: [],
+        },
+      ]);
     } catch (error) {
       return JSON.stringify([
         handleError(error, {
           reasoning: 'Failed to create swap transaction',
-          query: `Attempted to swap on pool ${poolId}`
-        })
-      ])
+          query: `Attempted to swap on pool ${poolId}`,
+        }),
+      ]);
     }
   }
 
@@ -327,11 +378,15 @@ class CetusTools {
     coinTypeA: string,
     coinTypeB: string,
     tickSpacing: number,
-    initialPrice: string
+    initialPrice: string,
   ) {
     try {
-      const sdk = this.initSDK()
-      const initSqrtPrice = TickMath.priceToSqrtPriceX64(d(initialPrice), 6, 6).toString()
+      const sdk = this.initSDK();
+      const initSqrtPrice = TickMath.priceToSqrtPriceX64(
+        d(initialPrice),
+        6,
+        6,
+      ).toString();
 
       const payload = await sdk.Pool.createPoolTransactionPayload({
         coinTypeA,
@@ -346,35 +401,45 @@ class CetusTools {
         tick_upper: 0,
         metadata_a: '',
         metadata_b: '',
-        slippage: 0
-      })
+        slippage: 0,
+      });
 
-      return JSON.stringify([{
-        reasoning: 'Successfully created pool creation transaction',
-        response: payload,
-        status: 'success',
-        query: `Create pool for ${coinTypeA}/${coinTypeB}`,
-        errors: []
-      }])
+      return JSON.stringify([
+        {
+          reasoning: 'Successfully created pool creation transaction',
+          response: payload,
+          status: 'success',
+          query: `Create pool for ${coinTypeA}/${coinTypeB}`,
+          errors: [],
+        },
+      ]);
     } catch (error) {
       return JSON.stringify([
         handleError(error, {
           reasoning: 'Failed to create pool creation transaction',
-          query: `Attempted to create pool for ${coinTypeA}/${coinTypeB}`
-        })
-      ])
+          query: `Attempted to create pool for ${coinTypeA}/${coinTypeB}`,
+        }),
+      ]);
     }
   }
 
-  private static async removeLiquidity(positionId: string, liquidityAmount: string, slippage: number) {
+  private static async removeLiquidity(
+    positionId: string,
+    liquidityAmount: string,
+    slippage: number,
+  ) {
     try {
-      const sdk = this.initSDK()
-      const position = await sdk.Position.getPositionById(positionId)
-      const pool = await sdk.Pool.getPool(position.pool)
+      const sdk = this.initSDK();
+      const position = await sdk.Position.getPositionById(positionId);
+      const pool = await sdk.Pool.getPool(position.pool);
 
-      const lowerSqrtPrice = TickMath.tickIndexToSqrtPriceX64(position.tick_lower_index)
-      const upperSqrtPrice = TickMath.tickIndexToSqrtPriceX64(position.tick_upper_index)
-      const curSqrtPrice = new BN(pool.current_sqrt_price)
+      const lowerSqrtPrice = TickMath.tickIndexToSqrtPriceX64(
+        position.tick_lower_index,
+      );
+      const upperSqrtPrice = TickMath.tickIndexToSqrtPriceX64(
+        position.tick_upper_index,
+      );
+      const curSqrtPrice = new BN(pool.current_sqrt_price);
 
       // Get token amounts from liquidity
       const coinAmounts = ClmmPoolUtil.getCoinAmountFromLiquidity(
@@ -382,13 +447,24 @@ class CetusTools {
         curSqrtPrice,
         lowerSqrtPrice,
         upperSqrtPrice,
-        false
-      )
+        false,
+      );
 
       // Adjust for slippage
-      const slippageTolerance = new Percentage(new BN(slippage * 100), new BN(100))
-      const minAmountA = adjustForSlippage(coinAmounts.coinA, slippageTolerance, false)
-      const minAmountB = adjustForSlippage(coinAmounts.coinB, slippageTolerance, false)
+      const slippageTolerance = new Percentage(
+        new BN(slippage * 100),
+        new BN(100),
+      );
+      const minAmountA = adjustForSlippage(
+        coinAmounts.coinA,
+        slippageTolerance,
+        false,
+      );
+      const minAmountB = adjustForSlippage(
+        coinAmounts.coinB,
+        slippageTolerance,
+        false,
+      );
 
       const payload = await sdk.Position.removeLiquidityTransactionPayload({
         coinTypeA: pool.coinTypeA,
@@ -399,25 +475,27 @@ class CetusTools {
         pool_id: pool.poolAddress,
         pos_id: positionId,
         collect_fee: true,
-        rewarder_coin_types: []
-      })
+        rewarder_coin_types: [],
+      });
 
-      return JSON.stringify([{
-        reasoning: 'Successfully created remove liquidity transaction',
-        response: payload,
-        status: 'success',
-        query: `Remove liquidity from position ${positionId}`,
-        errors: []
-      }])
+      return JSON.stringify([
+        {
+          reasoning: 'Successfully created remove liquidity transaction',
+          response: payload,
+          status: 'success',
+          query: `Remove liquidity from position ${positionId}`,
+          errors: [],
+        },
+      ]);
     } catch (error) {
       return JSON.stringify([
         handleError(error, {
           reasoning: 'Failed to create remove liquidity transaction',
-          query: `Attempted to remove liquidity from position ${positionId}`
-        })
-      ])
+          query: `Attempted to remove liquidity from position ${positionId}`,
+        }),
+      ]);
     }
   }
 }
 
-export default CetusTools 
+export default CetusTools;
