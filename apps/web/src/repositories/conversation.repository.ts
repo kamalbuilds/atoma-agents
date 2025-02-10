@@ -31,7 +31,7 @@ class ConversationRepository {
     async getByWalletAddress(walletAddress: string): Promise<IConversation[]> {
         return await Conversation.find({ walletAddress })
             .populate("messages")
-            .sort({ startedAt: -1 });
+            .sort({ startedAt: -1 }).exec() ;
     }
 }
 

@@ -81,6 +81,7 @@ class ConversationController {
         try {
             const { walletAddress } = req.params;
             const conversations = await this.conversationService.getUserConversations(walletAddress);
+  
             res.status(200).json(conversations);
         } catch (error) {
             console.error("Error fetching user conversations:", error);

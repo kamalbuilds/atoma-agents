@@ -24,7 +24,6 @@ const MessageSchema = new Schema<IMessage>({
 
 // **Encrypt before saving**
 MessageSchema.pre("save", function (next) {
-  console.log('i dey here oooo')
   if (this.isModified("message")) {
     const { encrypted, iv } = encrypt(this.message);
     this.message = encrypted;

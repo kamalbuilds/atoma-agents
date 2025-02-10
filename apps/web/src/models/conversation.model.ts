@@ -1,8 +1,9 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Schema, model, Document, Types,PopulatedDoc } from "mongoose";
+import { IMessage } from "./message.model";
 
 interface IConversation extends Document {
   walletAddress: string;
-  messages: Types.ObjectId[];
+  messages: PopulatedDoc<Document<Types.ObjectId> & IMessage>[]
   startedAt: Date;
   endedAt?: Date;
 }
