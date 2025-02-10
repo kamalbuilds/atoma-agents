@@ -1,2 +1,2 @@
-export * from "./BluefinProtocol";
-export * from "./types"; 
+export * from "./types";
+export { default as BluefinTools } from "./tools"; 
