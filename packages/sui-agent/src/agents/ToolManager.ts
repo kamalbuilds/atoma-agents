@@ -102,28 +102,51 @@ export class ToolManager {
     // Execute tools in parallel groups where possible
     for (let i = 0; i < plan.executionOrder.length; i++) {
       const toolIndex = plan.executionOrder[i];
-      const tool = plan.tools[toolIndex];
+      const currentTool = plan.tools[toolIndex];
+      if (!currentTool) {
+        throw new Error(`Tool at index ${toolIndex} not found in execution plan`);
+      }
+
       const parallelGroup = plan.parallelGroups?.find(group => group.includes(toolIndex));
 
       if (parallelGroup && parallelGroup.length > 0) {
         // Execute parallel group
-        const parallelExecutions = parallelGroup.map(async (index) => {
-          const parallelTool = plan.tools[index];
-          return this.executeSingleTool(parallelTool, [], plan.context);
-        });
+        const validTools = parallelGroup
+          .map(index => plan.tools[index])
+          .filter((tool): tool is EnhancedTool => tool !== undefined);
 
-        const results = await Promise.all(parallelExecutions);
+        if (validTools.length !== parallelGroup.length) {
+          throw new Error('Some tools in the parallel group are undefined');
+        }
+
+        type ExecutionPair = {
+          tool: EnhancedTool;
+          execution: Promise<ToolExecutionResult>;
+        };
+
+        // Execute all tools in parallel and collect results
+        const executions: ExecutionPair[] = validTools.map(tool => ({
+          tool,
+          execution: this.executeSingleTool(tool, [], plan.context),
+        }));
+
+        // Wait for all executions to complete
+        const results = await Promise.all(executions.map(e => e.execution));
         
         // Process results from parallel execution
         results.forEach((result, index) => {
-          const tool = plan.tools[parallelGroup[index]];
+          const execution = executions[index];
+          if (!execution) {
+            throw new Error(`Execution at index ${index} not found`);
+          }
+
           if (result.success) {
-            successfulTools.push(tool.name);
+            successfulTools.push(execution.tool.name);
           } else {
-            failedTools.push(tool.name);
+            failedTools.push(execution.tool.name);
           }
           stats.push({
-            toolName: tool.name,
+            toolName: execution.tool.name,
             executionTime: result.executionTime || 0,
             success: result.success,
             error: result.error,
@@ -135,14 +158,14 @@ export class ToolManager {
         i += parallelGroup.length - 1;
       } else {
         // Execute single tool
-        const result = await this.executeSingleTool(tool, [], plan.context);
+        const result = await this.executeSingleTool(currentTool, [], plan.context);
         if (result.success) {
-          successfulTools.push(tool.name);
+          successfulTools.push(currentTool.name);
         } else {
-          failedTools.push(tool.name);
+          failedTools.push(currentTool.name);
         }
         stats.push({
-          toolName: tool.name,
+          toolName: currentTool.name,
           executionTime: result.executionTime || 0,
           success: result.success,
           error: result.error,
