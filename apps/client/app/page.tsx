@@ -17,6 +17,7 @@ export default function Home() {
 
   const router = useRouter();
   const handleSend = async (message?: string) => {
+    const userMessage = message || inputValue.trim();
     //if connected , switch to chat conversation not anonymous mode
     if (address) {
       (async () => {
@@ -26,19 +27,20 @@ export default function Home() {
           });
           const { _id } = res.data;
           router.push(`/conversations/${_id}`);
-
+          console.log(message, 'message');
           await api.post(`/conversations/${_id}/messages`, {
             sender: 'user',
-            message,
+            message: userMessage,
             walletAddress: address
           });
           window.location.reload();
         } catch (error) {
+          console.log(error);
           alert('failed to create new chat');
         }
       })();
     }
-    const userMessage = message || inputValue.trim();
+
     if (userMessage) {
       setMessages((prev) => [...prev, { message: userMessage, sender: 'user' }]);
       setInputValue('');
