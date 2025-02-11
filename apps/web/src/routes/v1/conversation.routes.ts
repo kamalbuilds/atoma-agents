@@ -6,7 +6,7 @@ const controller = new ConversationController();
 
 
 // Start a new conversation
-conversationRouter.post("/", controller.startConversation);
+conversationRouter.post("/new", controller.startConversation);
 
 // Send a message in a conversation
 conversationRouter.post("/:conversationId/messages", controller.sendMessage);
@@ -17,4 +17,6 @@ conversationRouter.get("/:conversationId", controller.getConversation);
 // Get all conversations for a user
 conversationRouter.get("/user/:walletAddress", controller.getUserConversations);
 
+//get all user conversation Ids
+conversationRouter.get('/user/:walletAddress/id',controller.getUserConversationIds)
 export default conversationRouter; 

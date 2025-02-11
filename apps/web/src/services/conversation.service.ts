@@ -1,3 +1,4 @@
+import { IConversation } from '../models/conversation.model';
 import ConversationRepository from '../repositories/conversation.repository';
 import { Types } from 'mongoose';
 
@@ -22,10 +23,19 @@ class ConversationService {
     return encryptedConversations.map((convo) => ({
       ...convo.toObject(),
       messages: convo.messages.map((msg) =>
-        msg && typeof msg=== 'object' && 'message' in msg
+        msg && typeof msg === 'object' && 'message' in msg
           ? { ...msg.toObject(), message: msg.getDecryptedMessage() }
           : msg
       )
+    }));
+  }
+
+  public async getUserConversationIds(walletAddress: string) {
+    const encryptedConversations =
+      await this.conversationRepository.getByWalletAddress(walletAddress);
+    return encryptedConversations.map((conversation: IConversation) => ({
+      id: conversation._id,
+      title: conversation?.title ?? 'New Chat'
     }));
   }
 

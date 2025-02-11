@@ -13,7 +13,6 @@ interface MessagesProps {
 
 const Messages: React.FC<MessagesProps> = ({ messages }) => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -31,7 +30,7 @@ const Messages: React.FC<MessagesProps> = ({ messages }) => {
   });
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full  overflow-y-auto relative">
       {processedMessages.map((message, index) => (
         <div
           key={index}
