@@ -58,10 +58,10 @@ export default function Page() {
   const handleSend = async (message?: string) => {
     const userMessage = message || inputValue.trim();
     if (!userMessage) return;
-     if(!address) {
+    if (!address) {
       alert('wallet not connected');
-      router.push('/')
-     }
+      router.push('/');
+    }
     // Optimistically update UI
     setMessages((prev) => [...prev, { message: userMessage, sender: 'user' }]);
     setInputValue('');
@@ -88,7 +88,6 @@ export default function Page() {
 
   return (
     <div className="h-[90dvh]  flex-1 flex justify-center relative items-center flex-col bg-gradient-to-b from-white to-gray-100">
-     
       <div className="flex-grow overflow-y-auto p-4 w-full max-w-5xl rounded mt-3 bg-transparent relative">
         <div className="fixed inset-0 flex justify-center items-center pointer-events-none">
           <img src="/atomaLogo.svg" alt="Logo" className="w-[300px] h-[200px] opacity-10" />

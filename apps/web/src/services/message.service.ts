@@ -18,7 +18,7 @@ class MessageService {
     sessionId: Types.ObjectId;
   }) {
     // Create message
-   
+
     const message = await this.messageRepository.create(data);
     // Store message in conversation
     await this.conversationRepository.addMessage(

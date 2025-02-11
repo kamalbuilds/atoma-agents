@@ -60,6 +60,7 @@ const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {conversations.map((conversation) => {
           return (
             <div
+              key={conversation.id + conversation.title}
               onClick={() => router.push(`/conversations/${conversation.id}`)}
               className={`${conversation.id == conversationId ? 'bg-purple-600' : ''} p-2 border rounded-lg mt-1`}
             >

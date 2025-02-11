@@ -15,7 +15,7 @@ queryRouter.get('/health', (req: Request, res: Response) => {
 // Query endpoint
 const handleQuery = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { query, } = req.body;
+    const { query } = req.body;
     if (!query) {
       res.status(400).json({
         error: 'Missing query in request body'
