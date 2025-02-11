@@ -3,32 +3,12 @@ import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient } from '@mysten/sui/client';
 import { handleError } from '../../utils';
 import { initSuiClient } from '../../transactions/Transaction';
-import { getRankedPools } from './PoolTool';
+import PoolTool from './PoolTool';
+import { AftermathTransaction, RankingMetric, RankedPool } from './types';
 
 // Initialize Aftermath SDK for mainnet
 const af = new Aftermath('MAINNET');
 const pools = af.Pools();
-
-type RankingMetric = 'apr' | 'tvl' | 'fees' | 'volume';
-
-// Type definitions for Aftermath SDK responses
-interface AftermathTransaction {
-  target: `${string}::${string}::${string}`;
-  arguments: (string | number | boolean | bigint)[];
-  typeArguments: string[];
-}
-
-interface PoolMetrics {
-  apr: string;
-  tvl: string;
-  fee: string;
-  volume: string;
-}
-
-interface RankedPool {
-  id: string;
-  metrics: PoolMetrics;
-}
 
 /**
  * Converts an Aftermath transaction to our internal format.
@@ -132,7 +112,7 @@ export async function depositIntoTopPools(
 ): Promise<string> {
   try {
     // Get top ranked pools.
-    const rankedPoolsResponse = await getRankedPools(metric, numPools);
+    const rankedPoolsResponse = await PoolTool.getRankedPools(metric, numPools);
     const rankedPoolsData = JSON.parse(rankedPoolsResponse)[0];
     if (rankedPoolsData.status !== 'success') {
       throw new Error('Failed to fetch ranked pools');
