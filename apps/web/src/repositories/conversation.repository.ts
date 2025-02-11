@@ -31,6 +31,7 @@ class ConversationRepository {
       .sort({ startedAt: -1 })
       .exec();
   }
+  
 }
 
 export default ConversationRepository;

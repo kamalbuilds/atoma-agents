@@ -15,7 +15,7 @@ queryRouter.get('/health', (req: Request, res: Response) => {
 // Query endpoint
 const handleQuery = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { query, walletAddress } = req.body;
+    const { query, walletAddress ,conversationId} = req.body;
 
     if (!query) {
       res.status(400).json({
@@ -29,37 +29,41 @@ const handleQuery = async (req: Request, res: Response): Promise<void> => {
 
     // Only try to save chat history if walletAddress is provided
     if (walletAddress) {
-      try {
-        // Get or create chat history for this wallet
-        let chatHistory = await ChatHistory.findOne({ walletAddress });
-        if (!chatHistory) {
-          chatHistory = new ChatHistory({ walletAddress, messages: [] });
-        }
+     
 
-        // Add user message to history
-        chatHistory.messages.push({
-          text: query,
-          sender: 'user',
-          timestamp: new Date()
-        });
 
-        // Add agent response to history
-        chatHistory.messages.push({
-          text:
-            typeof result[0].response === 'string'
-              ? result[0].response
-              : JSON.stringify(result[0].response),
-          sender: 'llm',
-          isHTML: true,
-          timestamp: new Date()
-        });
 
-        // Save chat history
-        await chatHistory.save();
-      } catch (chatError) {
-        console.warn('Error saving chat history:', chatError);
-        // Continue with the response even if chat history fails
-      }
+      // try {
+      //   // Get or create chat history for this wallet
+      //   let chatHistory = await ChatHistory.findOne({ walletAddress });
+      //   if (!chatHistory) {
+      //     chatHistory = new ChatHistory({ walletAddress, messages: [] });
+      //   }
+
+      //   // Add user message to history
+      //   chatHistory.messages.push({
+      //     text: query,
+      //     sender: 'user',
+      //     timestamp: new Date()
+      //   });
+
+      //   // Add agent response to history
+      //   chatHistory.messages.push({
+      //     text:
+      //       typeof result[0].response === 'string'
+      //         ? result[0].response
+      //         : JSON.stringify(result[0].response),
+      //     sender: 'llm',
+      //     isHTML: true,
+      //     timestamp: new Date()
+      //   });
+
+      //   // Save chat history
+      //   await chatHistory.save();
+      // } catch (chatError) {
+      //   console.warn('Error saving chat history:', chatError);
+      //   // Continue with the response even if chat history fails
+      // }
     }
 
     res.status(200).json(result);

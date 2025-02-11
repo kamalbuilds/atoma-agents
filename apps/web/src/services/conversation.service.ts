@@ -16,20 +16,20 @@ class ConversationService {
     return await this.conversationRepository.endConversation(sessionId);
   }
 
-  async getUserConversations(walletAddress: string) {
+  public async getUserConversations(walletAddress: string) {
     const encryptedConversations =
       await this.conversationRepository.getByWalletAddress(walletAddress);
-    return encryptedConversations.map((dConvo) => ({
-      ...dConvo.toObject(),
-      messages: dConvo.messages.map((d) =>
-        d && typeof d === 'object' && 'message' in d
-          ? { ...d.toObject(), message: d.getDecryptedMessage() }
-          : d
+    return encryptedConversations.map((convo) => ({
+      ...convo.toObject(),
+      messages: convo.messages.map((msg) =>
+        msg && typeof msg=== 'object' && 'message' in msg
+          ? { ...msg.toObject(), message: msg.getDecryptedMessage() }
+          : msg
       )
     }));
   }
 
-  async getConversation(sessionId: Types.ObjectId) {
+  public async getConversation(sessionId: Types.ObjectId) {
     const conversation = await this.conversationRepository.getBySessionId(sessionId);
     if (!conversation) return null;
     return {
