@@ -1,7 +1,8 @@
-import { NAVISDKClient } from 'navi-sdk';
+import { NAVISDKClient, Sui } from 'navi-sdk';
 import { handleError } from '../../utils';
 import sentioApi from '../../config/sentio';
 import { Liquidation } from './types';
+
 // Initialize NAVI SDK client
 let naviClient: NAVISDKClient | null = null;
 
@@ -162,6 +163,119 @@ export async function checkUserLiquidationStatusTool(
       response: JSON.stringify(result),
       status: 'success',
       query: `Check liquidation status for ${walletAddress}`,
+      errors: [],
+    },
+  ]);
+}
+
+/**
+ * Gets NAVI portfolio for the specified address
+ * @param address - Address to get NAVI portfolio for
+ * @returns JSON string with NAVI portfolio
+ */
+
+export async function getNaviPortfolio(address: string) {
+  const account = naviClient?.accounts[0];
+  if (!account) {
+    throw new Error('NAVI SDK client not initialized');
+  }
+  const result = account.getNAVIPortfolio(address, true);
+  return JSON.stringify([
+    {
+      reasoning: 'Successfully retrieved NAVI portfolio',
+      response: JSON.stringify(result),
+      status: 'success',
+      query: `Get NAVI portfolio for ${address}`,
+      errors: [],
+    },
+  ]);
+}
+
+/**
+ * Gets available rewards for the specified address
+ * @param address - Address to get available rewards for
+ * @returns JSON string with available rewards
+ */
+
+export async function getNaviAvailableRewards(address: string) {
+  const account = naviClient?.accounts[0];
+  if (!account) {
+    throw new Error('NAVI SDK client not initialized');
+  }
+  const result = naviClient?.getAddressAvailableRewards(address, 1);
+  return JSON.stringify([
+    {
+      reasoning: 'Successfully retrieved NAVI available rewards',
+      response: JSON.stringify(result),
+      status: 'success',
+      query: `Get NAVI available rewards for ${address}`,
+      errors: [],
+    },
+  ]);
+}
+
+/**
+ * Gets NAVI pools for the specified coin
+ * @param coin - Coin to get NAVI pools for
+ * @returns JSON string with NAVI pools
+ */
+
+export async function getNaviPools(coin: string) {
+  const result = naviClient?.getPoolInfo();
+  return JSON.stringify([
+    {
+      reasoning: 'Successfully retrieved NAVI pools',
+      response: JSON.stringify(result),
+      status: 'success',
+      query: `Get NAVI pools for ${coin}`,
+      errors: [],
+    },
+  ]);
+}
+
+/**
+ * Deposits NAVI for the specified coin
+ * @param coin - Coin to deposit NAVI for
+ * @param amount - Amount to deposit
+ * @returns JSON string with deposit result
+ */
+
+export async function depositNavi(coin: string, amount: number) {
+  const account = naviClient?.accounts[0];
+  if (!account) {
+    throw new Error('NAVI SDK client not initialized');
+  }
+  const result = account.depositToNavi(Sui, amount);
+  return JSON.stringify([
+    {
+      reasoning: 'Successfully deposited NAVI',
+      response: JSON.stringify(result),
+      status: 'success',
+      query: `Deposit NAVI ${coin} ${amount}`,
+      errors: [],
+    },
+  ]);
+}
+
+/**
+ * Withdraws NAVI for the specified coin
+ * @param coin - Coin to withdraw NAVI for
+ * @param amount - Amount to withdraw
+ * @returns JSON string with withdrawal result
+ */
+
+export async function withrawFromNavi(coin: string, amount: number) {
+  const account = naviClient?.accounts[0];
+  if (!account) {
+    throw new Error('NAVI SDK client not initialized');
+  }
+  const result = account.withdraw(Sui, amount);
+  return JSON.stringify([
+    {
+      reasoning: 'Successfully withdrew from NAVI',
+      response: JSON.stringify(result),
+      status: 'success',
+      query: `Withdraw NAVI ${coin} ${amount}`,
       errors: [],
     },
   ]);
