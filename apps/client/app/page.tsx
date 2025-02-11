@@ -4,21 +4,40 @@ import PulseLoader from './components/ui/pulseLoader';
 import api from './lib/api';
 import { useWallet } from '@suiet/wallet-kit';
 import JSONFormatter from './utils/JSONFormatter';
-
 import Messages from './components/sections/Messages';
 import SampleQuestions from './components/sections/SampleQuestions';
-import LoadingPage from './components/ui/loadingPage';
-
+import { useRouter } from 'next/navigation';
 export default function Home() {
   const [messages, setMessages] = useState<
     { message: string; sender: 'user' | 'ai'; isHTML?: boolean }[]
   >([]);
   const [inputValue, setInputValue] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const { address, connected } = useWallet();
-  const [isLoading, setIsLoading] = useState(false);
+  const { address } = useWallet();
 
+  const router = useRouter();
   const handleSend = async (message?: string) => {
+    //if connected , switch to chat conversation not anonymous mode
+    if (address) {
+      (async () => {
+        try {
+          const res = await api.post('/conversations/new', {
+            walletAddress: address
+          });
+          const { _id } = res.data;
+          router.push(`/conversations/${_id}`);
+
+          await api.post(`/conversations/${_id}/messages`, {
+            sender: 'user',
+            message,
+            walletAddress: address
+          });
+          window.location.reload();
+        } catch (error) {
+          alert('failed to create new chat');
+        }
+      })();
+    }
     const userMessage = message || inputValue.trim();
     if (userMessage) {
       setMessages((prev) => [...prev, { message: userMessage, sender: 'user' }]);
@@ -57,7 +76,6 @@ export default function Home() {
       }
     }
   };
-  if (isLoading) return <LoadingPage />;
   return (
     <div className="h-[90dvh] flex-1 flex justify-center relative items-center flex-col bg-gradient-to-b from-white to-gray-100">
       {/* Change the messages container width to use flex-basis instead of fixed width */}
