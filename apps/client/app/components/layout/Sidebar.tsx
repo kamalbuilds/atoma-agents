@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useWallet } from '@suiet/wallet-kit';
-import { useRouter,useParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import api from '@/app/lib/api';
 import { ConversationItem } from '../sections/ConversationItem';
 import { KebabMenu } from '../sections/ConversationMenu';
@@ -19,12 +19,12 @@ const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const { connected, address } = useWallet();
-const {conversationId}=useParams()
+  const { conversationId } = useParams();
   const [kebabMenu, setKebabMenu] = useState({
     show: false,
     x: 0,
     y: 0,
-    id: '',
+    id: ''
   });
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const {conversationId}=useParams()
         try {
           const res = await api.post('/conversations/new', { walletAddress: address });
           const { _id } = res.data;
-          setConversations((prev)=>[...prev,{title:res.data?.title,id:_id}]);
+          setConversations((prev) => [...prev, { title: res.data?.title, id: _id }]);
           router.push(`/conversations/${_id}`);
         } catch (error) {
           alert('Failed to create new chat');
@@ -64,7 +64,7 @@ const {conversationId}=useParams()
       show: true,
       x: event.clientX,
       y: event.clientY,
-      id: id,
+      id: id
     });
   };
 
@@ -93,7 +93,7 @@ const {conversationId}=useParams()
       alert('Failed to delete conversation. Please check your connection and try again.');
     }
   };
-  
+
   return (
     <div className="flex h-screen">
       <div className="hidden sm:flex flex-col bg-white border-r w-72 p-4 space-y-4">

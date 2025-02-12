@@ -32,7 +32,7 @@ class ConversationRepository {
       .exec();
   }
 
-  async deleteConversation(sessionId:Types.ObjectId){
+  async deleteConversation(sessionId: Types.ObjectId) {
     return await Conversation.findByIdAndDelete(sessionId);
   }
 }

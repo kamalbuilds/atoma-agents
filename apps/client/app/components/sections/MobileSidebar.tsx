@@ -16,7 +16,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
   setIsOpen,
   addChat,
   conversations,
-  handleKebabClick,
+  handleKebabClick
 }) => {
   if (!isOpen) return null;
 

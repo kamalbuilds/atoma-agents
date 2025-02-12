@@ -52,13 +52,13 @@ class ConversationService {
     };
   }
 
-  public async deleteConversation(conversationId:string){
+  public async deleteConversation(conversationId: string) {
     if (!Types.ObjectId.isValid(conversationId)) {
-       throw new Error('please enter valid conversation Id');
-  }
-    let sessionId=new Types.ObjectId(conversationId);
-    console.log(sessionId)
-     return await this.conversationRepository.deleteConversation(sessionId)
+      throw new Error('please enter valid conversation Id');
+    }
+    const sessionId = new Types.ObjectId(conversationId);
+    console.log(sessionId);
+    return await this.conversationRepository.deleteConversation(sessionId);
   }
 }
 

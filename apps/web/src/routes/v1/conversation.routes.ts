@@ -15,6 +15,6 @@ conversationRouter.get('/user/:walletAddress', controller.getUserConversations);
 //get all user conversation Ids
 conversationRouter.get('/user/:walletAddress/id', controller.getUserConversationIds);
 //delete conversation by Id;
-conversationRouter.delete('/:conversationId/remove',controller.deleteUserConversations);
+conversationRouter.delete('/:conversationId/remove', controller.deleteUserConversations);
 
 export default conversationRouter;

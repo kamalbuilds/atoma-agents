@@ -14,7 +14,7 @@ interface ConversationItemProps {
 export const ConversationItem: React.FC<ConversationItemProps> = ({
   conversation,
   conversationId,
-  handleKebabClick,
+  handleKebabClick
 }) => {
   const router = useRouter();
   return (

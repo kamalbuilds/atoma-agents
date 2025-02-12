@@ -111,15 +111,14 @@ class ConversationController {
 
   deleteUserConversations = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { conversationId } = req.params;
- 
-        await this.conversationService.deleteConversation(conversationId);
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ error: "Internal server error" });
-    }
-};
+      const { conversationId } = req.params;
 
+      await this.conversationService.deleteConversation(conversationId);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
 }
 
 export default ConversationController;
