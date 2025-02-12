@@ -1,242 +1,201 @@
 import Tools from '../utils/tools';
 import {
-  transferCoinWrapper,
-  multiTransferWrapper,
-  mergeCoinsWrapper,
-  estimateGasWrapper,
-  depositTopPoolsWrapper,
-  withdrawPoolsWrapper,
-  getStakingPositionsWrapper,
-  getSuiTvlWrapper,
-  getAfSuiExchangeRateWrapper,
-  getStakeTransactionWrapper,
-} from '../utils/toolWrappers';
+  initSuiClient,
+  buildTransferTx,
+  executeTransaction,
+} from './Transaction';
+import { TransferParams } from './types';
+import { Transaction } from '@mysten/sui/transactions';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 
-class Transaction {
+class TransactionTools {
   public static registerTools(tools: Tools) {
+    // Initialize Sui Client
     tools.registerTool(
-      'transfer_coin',
-      'Tool to transfer a single type of coin to another address',
+      'init_sui_client',
+      'Initialize a Sui client for transaction operations',
       [
         {
-          name: 'fromAddress',
+          name: 'network',
           type: 'string',
-          description: "Sender's wallet address",
+          description: 'Network to connect to (MAINNET or TESTNET)',
+          required: true,
+        },
+      ],
+      async (...args) => {
+        try {
+          const client = initSuiClient(args[0] as 'MAINNET' | 'TESTNET');
+          return JSON.stringify({
+            status: 'success',
+            message: 'Sui client initialized successfully',
+            client,
+          });
+        } catch (error) {
+          return JSON.stringify({
+            status: 'error',
+            message: `Failed to initialize Sui client: ${error}`,
+          });
+        }
+      },
+    );
+
+    // Build Transfer Transaction
+    tools.registerTool(
+      'build_transfer_tx',
+      'Build a transaction for transferring tokens',
+      [
+        {
+          name: 'from_address',
+          type: 'string',
+          description: 'Sender address',
           required: true,
         },
         {
-          name: 'toAddress',
+          name: 'to_address',
           type: 'string',
-          description: "Recipient's wallet address",
+          description: 'Recipient address',
           required: true,
         },
         {
-          name: 'tokenType',
+          name: 'token_type',
           type: 'string',
-          description: "Type of token to transfer (e.g., '0x2::sui::SUI')",
+          description: 'Type of token to transfer (e.g., "0x2::sui::SUI")',
           required: true,
         },
         {
           name: 'amount',
           type: 'string',
-          description: 'Amount to transfer in base units',
+          description: 'Amount to transfer in MIST',
           required: true,
         },
       ],
-      transferCoinWrapper,
+      async (...args) => {
+        try {
+          const client = initSuiClient();
+          const params: TransferParams = {
+            fromAddress: args[0] as string,
+            toAddress: args[1] as string,
+            tokenType: args[2] as string,
+            amount: BigInt(args[3] as string),
+          };
+          const tx = await buildTransferTx(client, params);
+          return JSON.stringify({ status: 'success', transaction: tx });
+        } catch (error) {
+          return JSON.stringify({
+            status: 'error',
+            message: `Failed to build transfer transaction: ${error}`,
+          });
+        }
+      },
     );
 
+    // Execute Transaction
     tools.registerTool(
-      'multi_transfer',
-      'Tool to transfer multiple coins in a single transaction',
-      [
-        {
-          name: 'fromAddress',
-          type: 'string',
-          description: "Sender's wallet address",
-          required: true,
-        },
-        {
-          name: 'toAddress',
-          type: 'string',
-          description: "Recipient's wallet address",
-          required: true,
-        },
-        {
-          name: 'transfers',
-          type: 'array',
-          description: 'Array of token transfers with token type and amount',
-          required: true,
-        },
-      ],
-      multiTransferWrapper,
-    );
-
-    tools.registerTool(
-      'merge_coins',
-      'Tool to merge multiple coins of the same type',
-      [
-        {
-          name: 'coinType',
-          type: 'string',
-          description: 'Type of coins to merge',
-          required: true,
-        },
-        {
-          name: 'walletAddress',
-          type: 'string',
-          description: 'Address owning the coins',
-          required: true,
-        },
-        {
-          name: 'maxCoins',
-          type: 'number',
-          description: 'Maximum number of coins to merge',
-          required: false,
-        },
-      ],
-      mergeCoinsWrapper,
-    );
-
-    tools.registerTool(
-      'estimate_gas',
-      'Tool to estimate gas cost for a transaction',
+      'execute_transaction',
+      'Execute a signed transaction on the network',
       [
         {
           name: 'transaction',
-          type: 'object',
-          description: 'Transaction block to estimate gas for',
+          type: 'string',
+          description: 'Serialized transaction to execute',
+          required: true,
+        },
+        {
+          name: 'private_key',
+          type: 'string',
+          description: 'Private key for signing the transaction',
           required: true,
         },
       ],
-      estimateGasWrapper,
+      async (...args) => {
+        try {
+          const client = initSuiClient();
+          const tx = Transaction.from(args[0] as string);
+          const keypair = Ed25519Keypair.fromSecretKey(
+            Buffer.from(args[1] as string, 'hex'),
+          );
+          const result = await executeTransaction(client, tx, keypair);
+          return JSON.stringify({ status: 'success', result });
+        } catch (error) {
+          return JSON.stringify({
+            status: 'error',
+            message: `Failed to execute transaction: ${error}`,
+          });
+        }
+      },
     );
 
-    // Pool transaction tools
+    // Transfer SUI Tool - Using mnemonic from ENV
     tools.registerTool(
-      'deposit_top_pools',
-      'Tool to deposit funds into top pools',
+      'transfer_sui',
+      'Transfer SUI tokens from one address to another using mnemonic from environment variable SUI_MNEMONIC',
       [
         {
-          name: 'walletAddress',
+          name: 'recipient_address',
           type: 'string',
-          description: 'Address of the depositing wallet',
-          required: true,
-        },
-        {
-          name: 'metric',
-          type: 'string',
-          description: 'Metric to rank by (apr, tvl, fees, volume)',
+          description: 'Recipient address to send SUI to',
           required: true,
         },
         {
           name: 'amount',
           type: 'string',
-          description: 'Amount of SUI to deposit in each pool (in MIST)',
+          description: 'Amount of SUI to transfer in MIST (1 SUI = 10^9 MIST)',
           required: true,
         },
         {
-          name: 'numPools',
+          name: 'network',
           type: 'string',
-          description: 'Number of pools to deposit into',
-          required: true,
-        },
-        {
-          name: 'slippage',
-          type: 'string',
-          description: 'Maximum allowed slippage (e.g., 0.01 for 1%)',
-          required: true,
+          description: 'Network to use (MAINNET or TESTNET)',
+          required: false,
         },
       ],
-      depositTopPoolsWrapper,
-    );
+      async (...args) => {
+        try {
+          // Get mnemonic from environment variable
+          const mnemonic = process.env.SUI_MNEMONIC;
+          if (!mnemonic) {
+            throw new Error('SUI_MNEMONIC environment variable is not set');
+          }
 
-    tools.registerTool(
-      'withdraw_pool',
-      'Tool to withdraw LP tokens from a pool',
-      [
-        {
-          name: 'walletAddress',
-          type: 'string',
-          description: 'Address of the withdrawing wallet',
-          required: true,
-        },
-        {
-          name: 'poolId',
-          type: 'string',
-          description: 'ID of the pool to withdraw from',
-          required: true,
-        },
-        {
-          name: 'lpAmount',
-          type: 'string',
-          description: 'Amount of LP tokens to withdraw (in base units)',
-          required: true,
-        },
-        {
-          name: 'slippage',
-          type: 'string',
-          description: 'Maximum allowed slippage (e.g., 0.01 for 1%)',
-          required: true,
-        },
-      ],
-      withdrawPoolsWrapper,
-    );
+          // Initialize client
+          const network = (args[2] as 'MAINNET' | 'TESTNET') || 'MAINNET';
+          const client = initSuiClient(network);
 
-    // Staking Tools
-    tools.registerTool(
-      'get_staking_positions',
-      'Tool to get staking positions for a wallet',
-      [
-        {
-          name: 'walletAddress',
-          type: 'string',
-          description: 'Address of the wallet to check staking positions',
-          required: true,
-        },
-      ],
-      getStakingPositionsWrapper,
-    );
+          // Create keypair from mnemonic
+          const keypair = Ed25519Keypair.deriveKeypair(mnemonic);
+          const senderAddress = keypair.getPublicKey().toSuiAddress();
 
-    tools.registerTool(
-      'get_sui_tvl',
-      'Tool to get total SUI TVL in staking',
-      [],
-      getSuiTvlWrapper,
-    );
+          // Build transfer parameters
+          const params: TransferParams = {
+            fromAddress: senderAddress,
+            toAddress: args[0] as string,
+            tokenType: '0x2::sui::SUI',
+            amount: BigInt(args[1] as string),
+          };
 
-    tools.registerTool(
-      'get_afsui_exchange_rate',
-      'Tool to get afSUI to SUI exchange rate',
-      [],
-      getAfSuiExchangeRateWrapper,
-    );
+          // Build and execute transaction
+          const tx = await buildTransferTx(client, params);
+          const result = await executeTransaction(client, tx, keypair);
 
-    tools.registerTool(
-      'get_stake_transaction',
-      'Tool to generate a staking transaction',
-      [
-        {
-          name: 'walletAddress',
-          type: 'string',
-          description: 'Address of the wallet staking tokens',
-          required: true,
-        },
-        {
-          name: 'suiAmount',
-          type: 'string',
-          description: 'Amount of SUI to stake (in MIST)',
-          required: true,
-        },
-        {
-          name: 'validatorAddress',
-          type: 'string',
-          description: 'Address of the validator to stake with',
-          required: true,
-        },
-      ],
-      getStakeTransactionWrapper,
+          return JSON.stringify({
+            status: 'success',
+            result,
+            details: {
+              network,
+              sender: senderAddress,
+              recipient: args[0],
+              amount: args[1],
+            },
+          });
+        } catch (error) {
+          return JSON.stringify({
+            status: 'error',
+            message: `Failed to transfer SUI: ${error}`,
+          });
+        }
+      },
     );
   }
 }
-export default Transaction;
+
+export default TransactionTools;
