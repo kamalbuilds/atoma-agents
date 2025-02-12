@@ -2,26 +2,40 @@
 import { useWallet } from '@suiet/wallet-kit';
 import { useState, useEffect } from 'react';
 import { FiMenu } from 'react-icons/fi';
+import { MoreVertical } from 'lucide-react';
 import { AiOutlinePlus, AiOutlineSearch } from 'react-icons/ai';
 import api from '@/app/lib/api';
+
 import { useRouter, useParams } from 'next/navigation';
+interface Conversation{
+  title:string;
+  id:string;
+}
 const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [conversations, setConversations] = useState([{ title: '', id: '' }]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const { connected, address } = useWallet();
   const { conversationId } = useParams();
+  const [kebabMenu, setKebabMenu] = useState({
+    show: false,
+    x: 0,
+    y: 0,
+    id: '',
+  });
+
+
+
   async function getConvoIds() {
     try {
       let res = await api.get(`/conversations/user/${address}/id`);
       setConversations(res.data);
-      console.log(res);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
+
   useEffect(() => {
-    console.log(connected, address);
     if (address) {
       (async () => {
         await getConvoIds();
@@ -36,17 +50,53 @@ const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       (async () => {
         try {
           const res = await api.post('/conversations/new', {
-            walletAddress: address
+            walletAddress: address,
           });
           const { _id } = res.data;
           router.push(`/conversations/${_id}`);
-          console.log(res);
         } catch (error) {
           alert('failed to create new chat');
         }
       })();
     }
   };
+
+  const handleKebabClick = (event:React.MouseEvent, id:string) => {
+    event.stopPropagation(); // Prevent navigation to the conversation
+    setKebabMenu({
+      show: true,
+      x: event.clientX,
+      y: event.clientY,
+      id: id,
+    });
+  };
+
+  const handleKebabClose = () => {
+    setKebabMenu({ ...kebabMenu, show: false });
+  };
+
+  const handleDelete = async () => {
+    try {
+      const response = await api.delete(`/conversations/${kebabMenu.id}/remove`);
+    console.log(response)
+      if (response.status === 204) {  
+        setConversations(conversations.filter((convo) => convo.id !== kebabMenu.id));
+        handleKebabClose();
+  
+        if (kebabMenu.id === conversationId) {
+          router.push('/'); 
+        }
+      } else {
+        console.error("Unexpected status code:", response.status);
+        alert("Failed to delete conversation. Server returned an unexpected response.");
+      }
+  
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      alert("Failed to delete conversation. Please check your connection and try again."); // More user-friendly message
+    }
+  };
+
 
   const chats = () => {
     if (!connected)
@@ -57,38 +107,53 @@ const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       );
     return (
       <>
-        {conversations.map((conversation) => {
-          return (
-            <div
-              key={conversation.id + conversation.title}
-              onClick={() => router.push(`/conversations/${conversation.id}`)}
-              className={`${conversation.id == conversationId ? 'bg-purple-600' : ''} p-2 border rounded-lg mt-1`}
+        {!conversations.length?"": conversations.map((conversation) => (
+          <div
+            key={conversation.id + conversation.title}
+            onClick={() => router.push(`/conversations/${conversation.id}`)}
+            className={`${
+              conversation.id == conversationId ? 'bg-purple-600' : ''
+            } p-2 border rounded-lg mt-1 flex justify-center items-center relative`} // Added relative here
+          >
+            <p
+              className={`${
+                conversation.id == conversationId ? 'text-white' : ''
+              }`}
             >
-              <p className={`${conversation.id == conversationId ? 'text-white' : ''}`}>
-                conversation {conversation.id}
-              </p>
-            </div>
-          );
-        })}
+              conversation {conversation.id}
+            </p>
+            <MoreVertical
+              size={30}
+              className="z-10 cursor-pointer" // Added cursor-pointer
+              onClick={(e) => handleKebabClick(e, conversation.id)} // Pass the ID
+            />
+
+          </div>
+        ))}
+        {/* Kebab Menu */}
+        {kebabMenu.show && (
+          <div
+            style={{ left: kebabMenu.x, top: kebabMenu.y }}
+            className="absolute z-50 bg-white border rounded shadow-lg p-2"
+          >
+            <button className="block w-full text-left py-1 hover:bg-gray-100" onClick={() => {
+              
+              console.log("Rename clicked for", kebabMenu.id)
+              handleKebabClose();
+            }}>
+              Rename
+            </button>
+            <button className="block w-full text-left py-1 hover:bg-gray-100" onClick={handleDelete}>
+              Delete
+            </button>
+            <button className="block w-full text-left py-1 hover:bg-gray-100" onClick={handleKebabClose}>
+              Cancel
+            </button>
+          </div>
+        )}
       </>
     );
   };
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        isMobileMenuOpen &&
-        !(event.target as HTMLElement).closest('#mobile-menu') &&
-        !(event.target as HTMLElement).closest('#menu-button')
-      ) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleOutsideClick);
-    return () => document.removeEventListener('click', handleOutsideClick);
-  }, [isMobileMenuOpen]);
-
   return (
     <div className="flex h-screen">
       {/* Desktop Sidebar */}
@@ -96,7 +161,7 @@ const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Logo */}
         <div className="flex items-center space-x-2 mb-2">
           <div className="w-8 h-8 rounded-full bg-purple-600"></div>
-          <span className="text-lg font-semibold">Atoma Network</span>
+          <span className="text-lg font-semibold">AtomaSage</span>
         </div>
         {/* New Chat Button */}
         <button
@@ -144,7 +209,7 @@ const Sidebar: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             {/* Logo */}
             <div className="flex items-center space-x-2 mb-6">
               <div className="w-8 h-8 rounded-full bg-purple-600"></div>
-              <span className="text-lg font-semibold">Atoma Network</span>
+              <span className="text-lg font-semibold">AtomaSage</span>
             </div>
 
             {/* New Chat Button */}

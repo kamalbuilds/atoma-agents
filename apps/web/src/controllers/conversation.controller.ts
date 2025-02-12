@@ -10,15 +10,9 @@ import { Types } from 'mongoose';
 class ConversationController {
   private conversationService: ConversationService;
   private messageService: MessageService;
-  private temporaryConversations: Map<
-    string,
-    { walletAddress: string; messages: { sender: string; message: string }[] }
-  >;
-
   constructor() {
     this.conversationService = new ConversationService();
     this.messageService = new MessageService();
-    this.temporaryConversations = new Map();
   }
   startConversation = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -115,56 +109,17 @@ class ConversationController {
     }
   };
 
-  startTemporaryConversation = async (req: Request, res: Response): Promise<void> => {
+  deleteUserConversations = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { walletAddress } = req.body;
-      if (!walletAddress) {
-        res.status(400).json({ error: 'Missing Wallet Address' });
-        return;
-      }
-      const tempId = new Types.ObjectId().toString();
-      this.temporaryConversations.set(tempId, { walletAddress, messages: [] });
-      res.status(201).json({ tempId });
+        const { conversationId } = req.params;
+ 
+        await this.conversationService.deleteConversation(conversationId);
+        res.status(204).send();
     } catch (error) {
-      console.error('Error starting temporary conversation:', error);
-      res.status(500).json({ error: 'Failed to start temporary conversation' });
+        res.status(500).json({ error: "Internal server error" });
     }
-  };
+};
 
-  sendTemporaryMessage = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { tempId } = req.params;
-      const { message, walletAddress, sender } = req.body;
-
-      if (!this.temporaryConversations.has(tempId)) {
-        res.status(400).json({ error: 'Temporary conversation not found' });
-        return;
-      }
-
-      const result = await suiAgent.SuperVisorAgent(message, walletAddress);
-      const userMessage = { sender: (sender as string) || 'user', message };
-      const botMessage = { sender: 'ai', message: result[0].response };
-      this.temporaryConversations.get(tempId)?.messages.push(userMessage, botMessage);
-      res.status(201).json({ userMessage, botMessage });
-    } catch (error) {
-      console.error('Error sending temporary message:', error);
-      res.status(500).json({ error: 'Failed to send message' });
-    }
-  };
-  getTemporaryConversation = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { tempId } = req.params;
-
-      if (!this.temporaryConversations.has(tempId)) {
-        res.status(404).json({ error: 'Temporary conversation not found' });
-        return;
-      }
-      res.status(200).json(this.temporaryConversations.get(tempId));
-    } catch (error) {
-      console.error('Error fetching temporary conversation:', error);
-      res.status(500).json({ error: 'Failed to fetch conversation' });
-    }
-  };
 }
 
 export default ConversationController;

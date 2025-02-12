@@ -31,6 +31,10 @@ class ConversationRepository {
       .sort({ startedAt: -1 })
       .exec();
   }
+
+  async deleteConversation(sessionId:Types.ObjectId){
+    return await Conversation.findByIdAndDelete(sessionId);
+  }
 }
 
 export default ConversationRepository;
