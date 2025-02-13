@@ -25,16 +25,19 @@ export interface ToolDependency {
   };
 }
 
+export type ToolArguments = (string | number | boolean | bigint)[];
+export type ToolResult = unknown;
+
 export interface EnhancedTool extends Tool {
   category: string;
   version: string;
   dependencies?: ToolDependency[];
   parallelExecutionSupported?: boolean;
   requiredContext?: string[];
-  validateInput?: (args: any[]) => boolean;
-  transformOutput?: (result: any) => any;
+  validateInput?: (args: ToolArguments) => boolean;
+  transformOutput?: (result: ToolResult) => ToolResult;
   execute: (
-    args: any[],
+    args: ToolArguments,
     context: ToolExecutionContext,
   ) => Promise<ToolExecutionResult>;
 }

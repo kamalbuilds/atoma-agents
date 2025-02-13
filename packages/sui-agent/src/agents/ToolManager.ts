@@ -6,13 +6,14 @@ import {
   ToolExecutionResult,
   ToolExecutionStats,
   ToolExecutionSummary,
+  ToolArguments,
 } from '../@types/tool';
 import Atoma from '../config/atoma';
 
 export class ToolManager {
   private tools: Map<string, EnhancedTool>;
   private prompt: string;
-  private defaultContext: ToolExecutionContext;
+  private defaultContext: Required<ToolExecutionContext>;
 
   constructor(prompt: string, defaultContext: Partial<ToolExecutionContext> = {}) {
     this.tools = new Map();
@@ -22,6 +23,8 @@ export class ToolManager {
       priority: 1,
       maxRetries: 3,
       timeout: 30000,
+      walletAddress: '',
+      chainId: '',
       ...defaultContext,
     };
   }
@@ -95,9 +98,9 @@ export class ToolManager {
    */
   async executePlan(plan: ToolExecutionPlan): Promise<ToolExecutionSummary> {
     const startTime = Date.now();
-    const stats: ToolExecutionStats[] = [];
-    const successfulTools: string[] = [];
-    const failedTools: string[] = [];
+    const stats = new Map<string, ToolExecutionStats>();
+    const successfulTools = new Set<string>();
+    const failedTools = new Set<string>();
 
     // Execute tools in parallel groups where possible
     for (let i = 0; i < plan.executionOrder.length; i++) {
@@ -111,42 +114,38 @@ export class ToolManager {
 
       if (parallelGroup && parallelGroup.length > 0) {
         // Execute parallel group
-        const validTools = parallelGroup
-          .map(index => plan.tools[index])
-          .filter((tool): tool is EnhancedTool => tool !== undefined);
+        const validTools = new Map<number, EnhancedTool>();
+        for (const index of parallelGroup) {
+          const tool = plan.tools[index];
+          if (tool) {
+            validTools.set(index, tool);
+          }
+        }
 
-        if (validTools.length !== parallelGroup.length) {
+        if (validTools.size !== parallelGroup.length) {
           throw new Error('Some tools in the parallel group are undefined');
         }
 
-        type ExecutionPair = {
-          tool: EnhancedTool;
-          execution: Promise<ToolExecutionResult>;
-        };
-
-        // Execute all tools in parallel and collect results
-        const executions: ExecutionPair[] = validTools.map(tool => ({
-          tool,
-          execution: this.executeSingleTool(tool, [], plan.context),
-        }));
+        // Execute all tools in parallel
+        const executions = new Map<number, Promise<ToolExecutionResult>>();
+        validTools.forEach((tool, index) => {
+          executions.set(index, this.executeSingleTool(tool, [], plan.context));
+        });
 
         // Wait for all executions to complete
-        const results = await Promise.all(executions.map(e => e.execution));
+        const results = await Promise.all(executions.values());
         
         // Process results from parallel execution
-        results.forEach((result, index) => {
-          const execution = executions[index];
-          if (!execution) {
-            throw new Error(`Execution at index ${index} not found`);
-          }
-
+        let resultIndex = 0;
+        validTools.forEach((tool) => {
+          const result = results[resultIndex++];
           if (result.success) {
-            successfulTools.push(execution.tool.name);
+            successfulTools.add(tool.name);
           } else {
-            failedTools.push(execution.tool.name);
+            failedTools.add(tool.name);
           }
-          stats.push({
-            toolName: execution.tool.name,
+          stats.set(tool.name, {
+            toolName: tool.name,
             executionTime: result.executionTime || 0,
             success: result.success,
             error: result.error,
@@ -160,11 +159,11 @@ export class ToolManager {
         // Execute single tool
         const result = await this.executeSingleTool(currentTool, [], plan.context);
         if (result.success) {
-          successfulTools.push(currentTool.name);
+          successfulTools.add(currentTool.name);
         } else {
-          failedTools.push(currentTool.name);
+          failedTools.add(currentTool.name);
         }
-        stats.push({
+        stats.set(currentTool.name, {
           toolName: currentTool.name,
           executionTime: result.executionTime || 0,
           success: result.success,
@@ -176,9 +175,9 @@ export class ToolManager {
 
     return {
       totalExecutionTime: Date.now() - startTime,
-      successfulTools,
-      failedTools,
-      stats,
+      successfulTools: Array.from(successfulTools),
+      failedTools: Array.from(failedTools),
+      stats: Array.from(stats.values()),
     };
   }
 
@@ -187,13 +186,15 @@ export class ToolManager {
    */
   private async executeSingleTool(
     tool: EnhancedTool,
-    args: any[],
+    args: ToolArguments,
     context: ToolExecutionContext,
   ): Promise<ToolExecutionResult> {
     let retries = 0;
     const startTime = Date.now();
+    const maxRetries = context.maxRetries ?? this.defaultContext.maxRetries;
+    const timeout = context.timeout ?? this.defaultContext.timeout;
 
-    while (retries <= (context.maxRetries || this.defaultContext.maxRetries)) {
+    while (retries <= maxRetries) {
       try {
         // Validate input if validator exists
         if (tool.validateInput && !tool.validateInput(args)) {
@@ -204,8 +205,7 @@ export class ToolManager {
         const result = await Promise.race([
           tool.execute(args, context),
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Execution timeout')), 
-            context.timeout || this.defaultContext.timeout)
+            setTimeout(() => reject(new Error('Execution timeout')), timeout)
           ),
         ]);
 
@@ -214,14 +214,18 @@ export class ToolManager {
           ? tool.transformOutput(result)
           : result;
 
-        return {
-          ...transformedResult,
+        // Ensure the result matches ToolExecutionResult interface
+        const finalResult: ToolExecutionResult = {
+          success: true,
+          data: typeof transformedResult === 'string' ? transformedResult : JSON.stringify(transformedResult),
           executionTime: Date.now() - startTime,
           retries,
         };
+
+        return finalResult;
       } catch (error) {
         retries++;
-        if (retries > (context.maxRetries || this.defaultContext.maxRetries)) {
+        if (retries > maxRetries) {
           return {
             success: false,
             data: '',
@@ -230,8 +234,8 @@ export class ToolManager {
             retries,
           };
         }
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+        // Wait before retrying with exponential backoff
+        await new Promise<void>(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
       }
     }
 
